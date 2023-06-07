@@ -18,7 +18,7 @@ type Service struct {
 
 func HandlerGetServices(ctx *fiber.Ctx) error {
 	// get from postgres
-	rows, err := postgres.Conn.Query(ctx.Context(), "select id, title, description, info_href, date_update from pahomov_frolovsky_cson.services where actual")
+	rows, err := postgres.Conn.Query(ctx.Context(), "select id, title, description, info_href, date_update from public.services where actual")
 	if err != nil {
 		return response.ErrInternal.AddMessage(err).Send(ctx)
 	}
@@ -49,7 +49,7 @@ func HandlerGetService(ctx *fiber.Ctx) error {
 
 	service := Service{}
 	err = postgres.Conn.QueryRow(ctx.Context(),
-		"select id, title, description, info_href, date_update, actual from pahomov_frolovsky_cson.services where id = $1",
+		"select id, title, description, info_href, date_update, actual from public.services where id = $1",
 		serviceID).Scan(
 		&service.ID,
 		&service.Title,
@@ -79,7 +79,7 @@ func HandlerAddService(ctx *fiber.Ctx) error {
 	var serviceID int
 	var dateUpdate = time.Now()
 	err = postgres.Conn.QueryRow(ctx.Context(),
-		"INSERT INTO pahomov_frolovsky_cson.services (title, description, info_href, date_update, actual) VALUES ($1, $2, $3, $4, true) RETURNING id",
+		"INSERT INTO public.services (title, description, info_href, date_update, actual) VALUES ($1, $2, $3, $4, true) RETURNING id",
 		request.Title, request.Description, request.InfoHref, dateUpdate).Scan(&serviceID)
 	if err != nil {
 		return response.ErrInternal.AddMessage(err).Send(ctx)
@@ -108,7 +108,7 @@ func HandlerUpdateService(ctx *fiber.Ctx) error {
 	}
 
 	dateUpdate := time.Now()
-	_, err = postgres.Conn.Exec(ctx.Context(), "UPDATE pahomov_frolovsky_cson.services SET title=$1, description=$2, info_href=$3, date_update=$4, actual=true WHERE id=$5",
+	_, err = postgres.Conn.Exec(ctx.Context(), "UPDATE public.services SET title=$1, description=$2, info_href=$3, date_update=$4, actual=true WHERE id=$5",
 		request.Title, request.Description, request.InfoHref, dateUpdate, serviceID)
 	if err != nil {
 		return response.ErrInternal.AddMessage(err).Send(ctx)
@@ -131,7 +131,7 @@ func HandlerDeleteService(ctx *fiber.Ctx) error {
 	}
 
 	dateUpdate := time.Now()
-	_, err = postgres.Conn.Exec(ctx.Context(), "UPDATE pahomov_frolovsky_cson.services SET date_update=$1, actual=false WHERE id=$2",
+	_, err = postgres.Conn.Exec(ctx.Context(), "UPDATE public.services SET date_update=$1, actual=false WHERE id=$2",
 		dateUpdate, serviceID)
 	if err != nil {
 		return response.ErrInternal.AddMessage(err).Send(ctx)

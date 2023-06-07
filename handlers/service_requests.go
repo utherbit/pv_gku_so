@@ -46,7 +46,7 @@ func HandlerAddServiceRequest(ctx *fiber.Ctx) error {
 	// Insert postgres
 	request.RequestDate = time.Now()
 	err = postgres.Conn.QueryRow(ctx.Context(), `
-		INSERT INTO pahomov_frolovsky_cson.service_requests 
+		INSERT INTO public.service_requests 
     	(service_id, last_name, first_name, middle_name, passport_series, passport_number, snils, request_text, request_date)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id`,
@@ -71,8 +71,8 @@ func HandlerGetServiceRequests(ctx *fiber.Ctx) error {
 		    passport_series, passport_number, 
 		    snils, request_text, 
 		    request_date, consideration_date, status
-		from pahomov_frolovsky_cson.service_requests r
-		inner join pahomov_frolovsky_cson.services s on s.id = r.service_id `
+		from public.service_requests r
+		inner join public.services s on s.id = r.service_id `
 	if !all {
 		query += " where r.status = 0 order by status, consideration_date desc , request_date desc"
 	} else {
@@ -125,7 +125,7 @@ func HandlerUpdateRequestStatus(ctx *fiber.Ctx) error {
 
 	// update in postgres
 	_, err = postgres.Conn.Exec(ctx.Context(),
-		"UPDATE pahomov_frolovsky_cson.service_requests SET status=$2, consideration_date=now() WHERE id=$1", requestID, request.Status)
+		"UPDATE public.service_requests SET status=$2, consideration_date=now() WHERE id=$1", requestID, request.Status)
 	if err != nil {
 		return response.ErrInternal.AddMessage(err).Send(ctx)
 	}

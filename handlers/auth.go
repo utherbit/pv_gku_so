@@ -35,7 +35,7 @@ func HandlerLogin(ctx *fiber.Ctx) error {
 
 	var userId int
 	var password string
-	err = postgres.Conn.QueryRow(ctx.Context(), "SELECT id, password_ FROM pahomov_frolovsky_cson.users WHERE login_ = $1", request.Login).
+	err = postgres.Conn.QueryRow(ctx.Context(), "SELECT id, password_ FROM public.users WHERE login_ = $1", request.Login).
 		Scan(&userId, &password)
 	if err != nil {
 		if err == sql.ErrNoRows {
