@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "0ff09110-be7e-4619-9463-a30de4301c1d",
+		"_postman_id": "ddaa7017-39ac-42a9-8b5c-63fb3f02c4b5",
 		"name": "frolovsky_cson",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "24736325"
+		"_exporter_id": "15743743"
 	},
 	"item": [
 		{
@@ -200,6 +200,90 @@
 			]
 		},
 		{
+			"name": "news",
+			"item": [
+				{
+					"name": "Добавить новость",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "Title",
+									"value": "dfgdf",
+									"type": "text"
+								},
+								{
+									"key": "Description",
+									"value": "gdfgdfg",
+									"type": "text"
+								},
+								{
+									"key": "File",
+									"type": "file",
+									"src": "/C:/Users/Anton/Downloads/ezgif.com-video-to-gif.gif"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}:{{port}}/news",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"news"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Обновить",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "Title",
+									"value": "dsfsdfsdfretyq45yu256",
+									"type": "text"
+								},
+								{
+									"key": "Description",
+									"value": "gdfgdfg",
+									"type": "text"
+								},
+								{
+									"key": "File",
+									"type": "file",
+									"src": "/C:/Users/Anton/Desktop/config_backup.rsc"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://{{host}}:{{port}}/news/2",
+							"protocol": "http",
+							"host": [
+								"{{host}}"
+							],
+							"port": "{{port}}",
+							"path": [
+								"news",
+								"2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Авторизация",
 			"request": {
 				"method": "POST",
@@ -233,7 +317,7 @@
 		"bearer": [
 			{
 				"key": "token",
-				"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxfQ.RTekvj49A01hoZw-4OZ4VzmR0jsMRsgud08Rn8LvGAY",
+				"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlX2lkIjoyLCJ1c2VyX2lkIjoyfQ.iJZRomeWY4QwvfoHk5B5pTDi3qCEOjVVFM1z75qUzwk",
 				"type": "string"
 			}
 		]
@@ -261,7 +345,7 @@
 	"variable": [
 		{
 			"key": "host",
-			"value": "192.168.85.245",
+			"value": "127.0.0.1",
 			"type": "string"
 		},
 		{

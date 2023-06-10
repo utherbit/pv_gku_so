@@ -12,9 +12,10 @@ import (
 
 var secret = "your-secret-key"
 
-func GenerateToken(userID int) (string, error) {
+func GenerateToken(userID int, roleId int) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
+		"role_id": roleId,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -35,8 +36,9 @@ func HandlerLogin(ctx *fiber.Ctx) error {
 
 	var userId int
 	var password string
-	err = postgres.Conn.QueryRow(ctx.Context(), "SELECT id, password_ FROM public.users WHERE login_ = $1", request.Login).
-		Scan(&userId, &password)
+	var roleId int
+	err = postgres.Conn.QueryRow(ctx.Context(), "SELECT id, password, role_id FROM public.users WHERE login = $1", request.Login).
+		Scan(&userId, &password, &roleId)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return response.ErrUnauthorized.SetData("Invalid credentials").AddMessage("Логин или пароль указан не верно").Send(ctx)
@@ -51,7 +53,7 @@ func HandlerLogin(ctx *fiber.Ctx) error {
 	}
 
 	// Generate a JWT token
-	token, err := GenerateToken(userId)
+	token, err := GenerateToken(userId, roleId)
 	if err != nil {
 		return response.ErrInternal.SetData("Failed to generate token " + err.Error()).Send(ctx)
 	}
@@ -60,8 +62,18 @@ func HandlerLogin(ctx *fiber.Ctx) error {
 	return response.OK.SetData(map[string]string{"token": token}).Send(ctx)
 }
 
+func AuthMiddlewareAll(ctx *fiber.Ctx) error {
+	return AuthMiddleware(ctx, []int{1, 2})
+}
+func AuthMiddlewareNewsMaker(ctx *fiber.Ctx) error {
+	return AuthMiddleware(ctx, []int{2})
+}
+func AuthMiddlewareAdmin(ctx *fiber.Ctx) error {
+	return AuthMiddleware(ctx, []int{1})
+}
+
 // AuthMiddleware is a middleware function to check if the user is authorized
-func AuthMiddleware(ctx *fiber.Ctx) error {
+func AuthMiddleware(ctx *fiber.Ctx, roles []int) error {
 	// Extract the token from the Authorization header
 	authHeader := ctx.Get("Authorization")
 	if authHeader == "" {
@@ -70,7 +82,8 @@ func AuthMiddleware(ctx *fiber.Ctx) error {
 
 	// Verify the token
 	tokenString := authHeader[len("Bearer "):]
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		// Verify the signing method and return the secret key
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
@@ -89,7 +102,28 @@ func AuthMiddleware(ctx *fiber.Ctx) error {
 	if !token.Valid {
 		return response.ErrInternal.SetData("Invalid token").Send(ctx)
 	}
+	for _, role := range roles {
+		//fmt.Println("claims[\"role_id\"]", fmt.Sprintf("%v", claims["role_id"]), "==", strconv.Itoa(role))
+
+		if claims["role_id"] == float64(role) {
+			return ctx.Next()
+		}
+	}
+	return response.ErrUnauthorized.SetData("У Вас нет необходимой роли!").Send(ctx)
 
 	// Proceed to the next middleware or handler
-	return ctx.Next()
+
 }
+
+//func IsRoleNewsMaker(t *jwt.Token) error {
+//	if validateRole(t, 2) {
+//		return nil
+//	}
+//	return errors.New("У Вас нет необходимой роли!")
+//}
+//
+//func validateRole(t *jwt.Token, roleId int) bool {
+//	claims := t.Claims.(jwt.MapClaims)
+//	id := int(claims["role_id"].(float64))
+//	return id == roleId
+//}

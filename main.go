@@ -25,21 +25,26 @@ func InitFiber() {
 
 	// Авторизация
 	app.Post("/login", handlers.HandlerLogin)
-	app.Use(handlers.AuthMiddleware)
 
+	//app.Use(handlers.AuthMiddlewareAdmin)
 	// Добавление новой услуги
-	app.Post("/services", handlers.HandlerAddService)
+	app.Post("/services", handlers.AuthMiddlewareAdmin, handlers.HandlerAddService)
 	// Получение информации об услуге по id
-	app.Get("/services/:id", handlers.HandlerGetService)
+	app.Get("/services/:id", handlers.AuthMiddlewareAdmin, handlers.HandlerGetService)
 	// Изменение услуги по id
-	app.Patch("/services/:id", handlers.HandlerUpdateService)
+	app.Patch("/services/:id", handlers.AuthMiddlewareAdmin, handlers.HandlerUpdateService)
 	// Удаление услуги по id
-	app.Delete("/services/:id", handlers.HandlerDeleteService)
+	app.Delete("/services/:id", handlers.AuthMiddlewareAdmin, handlers.HandlerDeleteService)
 
 	// Просмотр списка заявок
-	app.Get("/requests", handlers.HandlerGetServiceRequests)
+	app.Get("/requests", handlers.AuthMiddlewareAdmin, handlers.HandlerGetServiceRequests)
 	// Изменение статуса заявки
-	app.Patch("/requests/:id", handlers.HandlerUpdateRequestStatus)
+	app.Patch("/requests/:id", handlers.AuthMiddlewareAdmin, handlers.HandlerUpdateRequestStatus)
+
+	//app.Use(handlers.AuthMiddlewareNewsMaker)
+	// Добавление новой новости
+	app.Post("/news", handlers.AuthMiddlewareNewsMaker, handlers.HandlerAddNewsRequest)
+	app.Patch("/news/:id", handlers.AuthMiddlewareNewsMaker, handlers.HandlerUpdateNews)
 
 	var addr string
 	utilities.LookupEnv(&addr, "LISTEN_ADDR")
