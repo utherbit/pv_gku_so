@@ -16,35 +16,55 @@ func main() {
 
 func InitFiber() {
 	app := fiber.New()
-	app.Use(cors.New(cors.ConfigDefault))
+	app.Use(cors.New(cors.Config{
+		AllowHeaders: "*",
+		AllowOrigins: "*",
+		AllowMethods: "GET,POST,PATCH,PUT,DELETE",
+	}))
 
+	//app.Use(func(ctx *fiber.Ctx) error {
+	//	fmt.Printf("\nRequest %s %s%s", ctx.Method(), ctx.BaseURL(), ctx.OriginalURL())
+	//	n := ctx.Next()
+	//	fmt.Printf("\nResponse %d %s", ctx.Response().StatusCode(), ctx.Response().Body())
+	//	return n
+	//})
 	// Просмотр списка услуг
 	app.Get("/services", handlers.HandlerGetServices)
+	// Получение информации об услуге по id
+	app.Get("/services/:id", handlers.HandlerGetService)
+
 	// Оставить заявку по услуге
 	app.Post("/requests", handlers.HandlerAddServiceRequest)
+
+	app.Get("/news", handlers.HandlerGetNewsSlice)
+	app.Get("/news/:id", handlers.HandlerGetNews)
+	//app.Static("/uploads", "./uploads")
+	app.Get("/uploads/:fileuid", handlers.HandlerGetFile)
 
 	// Авторизация
 	app.Post("/login", handlers.HandlerLogin)
 
 	//app.Use(handlers.AuthMiddlewareAdmin)
+	services := app.Group("/services", handlers.AuthMiddlewareAdmin)
 	// Добавление новой услуги
-	app.Post("/services", handlers.AuthMiddlewareAdmin, handlers.HandlerAddService)
-	// Получение информации об услуге по id
-	app.Get("/services/:id", handlers.AuthMiddlewareAdmin, handlers.HandlerGetService)
+	services.Post("", handlers.HandlerAddService)
 	// Изменение услуги по id
-	app.Patch("/services/:id", handlers.AuthMiddlewareAdmin, handlers.HandlerUpdateService)
+	services.Patch("/:id", handlers.HandlerUpdateService)
 	// Удаление услуги по id
-	app.Delete("/services/:id", handlers.AuthMiddlewareAdmin, handlers.HandlerDeleteService)
+	services.Delete("/:id", handlers.HandlerDeleteService)
 
+	requests := app.Group("/requests", handlers.AuthMiddlewareAdmin)
 	// Просмотр списка заявок
-	app.Get("/requests", handlers.AuthMiddlewareAdmin, handlers.HandlerGetServiceRequests)
+	requests.Get("", handlers.HandlerGetServiceRequests)
 	// Изменение статуса заявки
-	app.Patch("/requests/:id", handlers.AuthMiddlewareAdmin, handlers.HandlerUpdateRequestStatus)
+	requests.Patch("/:id", handlers.HandlerUpdateRequestStatus)
 
 	//app.Use(handlers.AuthMiddlewareNewsMaker)
+	news := app.Group("/news", handlers.AuthMiddlewareNewsMaker)
 	// Добавление новой новости
-	app.Post("/news", handlers.AuthMiddlewareNewsMaker, handlers.HandlerAddNewsRequest)
-	app.Patch("/news/:id", handlers.AuthMiddlewareNewsMaker, handlers.HandlerUpdateNews)
+	news.Post("", handlers.HandlerAddNewsRequest)
+	news.Patch("/:id", handlers.HandlerUpdateNews)
+	news.Delete("/:id", handlers.HandlerDeleteNews)
 
 	var addr string
 	utilities.LookupEnv(&addr, "LISTEN_ADDR")
