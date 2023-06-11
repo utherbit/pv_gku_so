@@ -24,16 +24,10 @@ type News struct {
 func HandlerAddNewsRequest(ctx *fiber.Ctx) error {
 	// Request
 	var request News
-	//var request struct {
-	//	Id          int       `json:"id,omitempty"`
-	//	Title       string    `json:"title"`
-	//	Description string    `json:"description"`
-	//	FileUrl     string    `json:"fileUrl"`
-	//	CreateAt    time.Time `json:"createAt,omitempty"`
-	//}
+
 	var uploadPath string
 	utilities.LookupEnv(&uploadPath, "UPLOAD_PATH", "")
-	fmt.Printf("\nHandlerAddNewsRequest %s", ctx.Request().Body())
+
 	err := ctx.BodyParser(&request)
 	if err != nil {
 		return response.ErrBadRequest.Send(ctx)
@@ -60,6 +54,7 @@ func HandlerAddNewsRequest(ctx *fiber.Ctx) error {
 		if err != nil {
 			return response.OK.SetData(request).Send(ctx)
 		}
+
 		request.FileUrl = fileUrl
 		request.FileName = file.Filename
 		break
@@ -84,14 +79,7 @@ func HandlerAddNewsRequest(ctx *fiber.Ctx) error {
 
 func HandlerUpdateNews(ctx *fiber.Ctx) error {
 	// Request
-	var request struct {
-		Id          int
-		Title       string    `json:"title"`
-		Description string    `json:"description"`
-		FileUrl     string    `json:"fileUrl"`
-		CreateAt    time.Time `json:"createAt"`
-		UpdateAt    time.Time `json:"updateAt"`
-	}
+	var request News
 	var uploadPath string
 	utilities.LookupEnv(&uploadPath, "UPLOAD_PATH", "")
 
@@ -107,23 +95,34 @@ func HandlerUpdateNews(ctx *fiber.Ctx) error {
 
 	form, _ := ctx.MultipartForm()
 
-	//Loop through files:
+	var fileId int
 	for _, file := range form.File["File"] {
-		fileUrl := fmt.Sprintf("%s%s", uploadPath, file.Filename)
-		fmt.Println(file.Filename, file.Size, file.Header["Content-Type"][0])
-		// => "tutorial.pdf" 360641 "application/pdf"
+		fmt.Printf("\nFile: %s %d %s", file.Filename, file.Size, file.Header["Content-Type"][0])
+
+		fileUid := uuid.V4()
+		fileUrl := fmt.Sprintf("%s/%s", uploadPath, fileUid)
 
 		// Save the files to disk:
-		if err := ctx.SaveFile(file, fmt.Sprintf("./%s", fileUrl)); err != nil {
+		if err = ctx.SaveFile(file, fmt.Sprintf("./%s", fileUrl)); err != nil {
 			return response.ErrInternal.AddMessage(err).Send(ctx)
 		}
+
+		err = postgres.Conn.QueryRow(ctx.Context(),
+			"insert into public.files (file_path, file_name, file_size, file_uid) values ($1, $2, $3, $4) returning id ",
+			fileUrl, file.Filename, file.Size, fileUid).Scan(&fileId)
+		if err != nil {
+			return response.OK.SetData(request).Send(ctx)
+		}
+
 		request.FileUrl = fileUrl
+		request.FileName = file.Filename
 		break
 	}
 
-	request.UpdateAt = time.Now()
-	_, err = postgres.Conn.Exec(ctx.Context(), "UPDATE news SET title=$1, description=$2, update_at=$3 WHERE id=$4 ",
-		request.Title, request.Description, request.UpdateAt, request.Id)
+	updateAt := time.Now()
+	request.UpdateAt = updateAt.Format("2006-01-02 15:04")
+	_, err = postgres.Conn.Exec(ctx.Context(), "UPDATE news SET title=$1, description=$2, update_at=$3, file_id=$5 WHERE id=$4 ",
+		request.Title, request.Description, updateAt, request.Id, fileId)
 	if err != nil {
 		return response.ErrInternal.AddMessage(err).Send(ctx)
 	}

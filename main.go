@@ -36,9 +36,11 @@ func InitFiber() {
 	// Оставить заявку по услуге
 	app.Post("/requests", handlers.HandlerAddServiceRequest)
 
+	// Получение новостей
 	app.Get("/news", handlers.HandlerGetNewsSlice)
 	app.Get("/news/:id", handlers.HandlerGetNews)
-	//app.Static("/uploads", "./uploads")
+
+	// Получение файлов
 	app.Get("/uploads/:fileuid", handlers.HandlerGetFile)
 
 	// Авторизация
@@ -59,7 +61,6 @@ func InitFiber() {
 	// Изменение статуса заявки
 	requests.Patch("/:id", handlers.HandlerUpdateRequestStatus)
 
-	//app.Use(handlers.AuthMiddlewareNewsMaker)
 	news := app.Group("/news", handlers.AuthMiddlewareNewsMaker)
 	// Добавление новой новости
 	news.Post("", handlers.HandlerAddNewsRequest)
